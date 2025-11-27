@@ -38,7 +38,7 @@ jobs:
 
       - name: Rename firmware
         run: |
-          mv build/*.bin build/blink_OTA.bin
+          mv build/blink_OTA.ino.bin build/blink_OTA.bin
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
