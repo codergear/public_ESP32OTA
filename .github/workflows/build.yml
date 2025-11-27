@@ -13,41 +13,41 @@ jobs:
       contents: write   # necesario para crear releases
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Install Arduino CLI (official archive, safest method 2025)
-      run: |
-        wget -q https://downloads.arduino.cc/arduino-cli/arduino-cli_latest_Linux_64bit.tar.gz
-        tar -xzf arduino-cli_latest_Linux_64bit.tar.gz
-        sudo install -m 755 arduino-cli /usr/local/bin/arduino-cli
-        arduino-cli version
+      - name: Install Arduino CLI (official archive)
+        run: |
+          wget -q https://downloads.arduino.cc/arduino-cli/arduino-cli_latest_Linux_64bit.tar.gz
+          tar -xzf arduino-cli_latest_Linux_64bit.tar.gz
+          sudo install -m 755 arduino-cli /usr/local/bin/arduino-cli
+          arduino-cli version
 
-    - name: Configure Arduino CLI
-      run: |
-        arduino-cli config init
-        arduino-cli core update-index
-        arduino-cli core install esp32:esp32
+      - name: Configure Arduino CLI
+        run: |
+          arduino-cli config init
+          arduino-cli core update-index
+          arduino-cli core install esp32:esp32
 
-    - name: Compile sketch (ESP32 Dev Module)
-      run: |
-        arduino-cli compile \
-          --fqbn esp32:esp32:esp32 \
-          --output-dir build \
-          "./blink_OTA"
+      - name: Compile sketch (ESP32 Dev Module)
+        run: |
+          arduino-cli compile \
+            --fqbn esp32:esp32:esp32 \
+            --output-dir build \
+            "./blink_OTA"
 
-    - name: Rename firmware for release
-      run: |
-        mv build/*.bin build/blink_OTA.bin
+      - name: Rename firmware for release
+        run: |
+          mv build/*.bin build/blink_OTA.bin
 
-    - name: Upload artifact (debug only)
-      uses: actions/upload-artifact@v4
-      with:
-        name: esp32-blink-ota-firmware
-        path: build
+      - name: Upload artifact (debug only)
+        uses: actions/upload-artifact@v4
+        with:
+          name: esp32-blink-ota-firmware
+          path: build
 
-    - name: Create or Update Release (tag: latest)
-      uses: softprops/action-gh-release@v1
-      with:
-        tag_name: latest
-        files: build/blink_OTA.bin
+      - name: Create or Update Release (tag: latest)
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: "latest"
+          files: build/blink_OTA.bin
