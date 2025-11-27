@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-      contents: write     # necesario para crear releases
+      contents: write
 
     steps:
       - name: Checkout code
@@ -41,7 +41,7 @@ jobs:
 
       - name: Rename firmware
         run: |
-          mv build/*.bin build/blink_OTA.bin
+          mv build/blink_OTA*.bin build/blink_OTA.bin
 
       - name: Release firmware
         uses: softprops/action-gh-release@v1
