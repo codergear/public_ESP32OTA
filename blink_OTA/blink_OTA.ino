@@ -10,7 +10,7 @@
 Preferences preferences;
 
 // ===============================
-// CONFIGURACIÓN DEL PROYECTO
+// CONFIGURACION DEL PROYECTO
 // ===============================
 
 const char* GITHUB_API_URL =
@@ -22,23 +22,23 @@ const int LED_PIN = 2;
 String ssid = "";
 String pass = "";
 
-// Versión local almacenada en NVS
+// Version local almacenada en NVS
 int versionLocal = 0;
 
-// Version remota y URL de firmware
+// Version remota y URL
 String versionRemota = "";
 String urlFirmware = "";
 
 // ===============================
-// UTILITIES
+// UTILIDADES
 // ===============================
 int versionStringToInt(const String& tag) {
-  if (tag.length() < 2) return 0; // "v"
-  return tag.substring(1).toInt(); // "v14" -> 14
+  if (tag.length() < 2) return 0;
+  return tag.substring(1).toInt();   // v12 -> 12
 }
 
 // ===============================
-// NVS: LEER CREDENCIALES Y VERSIÓN
+// NVS: LEER CREDENCIALES Y VERSION
 // ===============================
 bool leerDatosNVS() {
   // Leer WiFi
@@ -47,7 +47,7 @@ bool leerDatosNVS() {
   pass = preferences.getString("pass", "");
   preferences.end();
 
-  // Leer versión
+  // Leer version
   preferences.begin("version", true);
   versionLocal = preferences.getInt("local", 0);
   preferences.end();
@@ -66,7 +66,7 @@ void guardarCredenciales(String s, String p) {
 }
 
 // ===============================
-// NVS: GUARDAR VERSIÓN
+// NVS: GUARDAR VERSION
 // ===============================
 void guardarVersionLocal(int v) {
   preferences.begin("version", false);
@@ -75,10 +75,11 @@ void guardarVersionLocal(int v) {
 }
 
 // ===============================
-// CONFIGURACIÓN POR SERIAL
+// CONFIGURACION POR SERIAL
 // ===============================
 void modoConfiguracion() {
-  Serial.println("\n=== CONFIGURACIÓN DE WIFI ===");
+  Serial.println("");
+  Serial.println("=== CONFIGURACION DE WIFI ===");
 
   Serial.print("SSID: ");
   while (!Serial.available()) {}
@@ -102,7 +103,6 @@ void modoConfiguracion() {
 // ===============================
 void conectarWiFi() {
   Serial.printf("Conectando a WiFi: %s\n", ssid.c_str());
-
   WiFi.begin(ssid.c_str(), pass.c_str());
 
   int intentos = 0;
@@ -113,10 +113,10 @@ void conectarWiFi() {
   }
 
   if (WiFi.status() == WL_CONNECTED) {
-    Serial.print("\nWiFi OK. IP: ");
+    Serial.print("\nWiFi conectado. IP: ");
     Serial.println(WiFi.localIP());
   } else {
-    Serial.println("\n No conecta. Modo configuración...");
+    Serial.println("\nNo se pudo conectar. Entrando en modo configuracion...");
     modoConfiguracion();
   }
 }
@@ -125,7 +125,8 @@ void conectarWiFi() {
 // CONSULTAR VERSION REMOTA
 // ===============================
 bool comprobarVersion() {
-  Serial.println("\nConsultando versión remota en GitHub...");
+  Serial.println("");
+  Serial.println("Consultando version remota en GitHub...");
 
   WiFiClientSecure client;
   client.setInsecure();
@@ -134,16 +135,15 @@ bool comprobarVersion() {
   http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
 
   if (!http.begin(client, GITHUB_API_URL)) {
-    Serial.println(" No se pudo iniciar conexión");
+    Serial.println("Error: No se pudo iniciar conexion");
     return false;
   }
 
-  // >>> CAMBIO IMPRESCINDIBLE <<<
   http.addHeader("User-Agent", "ESP32-Updater");
 
   int code = http.GET();
   if (code != HTTP_CODE_OK) {
-    Serial.printf(" Error HTTP: %d\n", code);
+    Serial.printf("Error HTTP: %d\n", code);
     http.end();
     return false;
   }
@@ -155,19 +155,19 @@ bool comprobarVersion() {
   auto err = deserializeJson(doc, json);
 
   if (err) {
-    Serial.println(" Error JSON");
+    Serial.println("Error JSON");
     return false;
   }
 
   versionRemota = doc["tag_name"].as<String>();
   urlFirmware   = doc["assets"][0]["browser_download_url"].as<String>();
 
-  Serial.println("Versión remota: " + versionRemota);
-  Serial.println("URL Firmware:  " + urlFirmware);
+  Serial.println("Version remota: " + versionRemota);
+  Serial.println("URL Firmware:   " + urlFirmware);
 
   int vRemota = versionStringToInt(versionRemota);
 
-  Serial.printf("Comparando versiones: local=%d   remota=%d\n",
+  Serial.printf("Comparando versiones: local=%d  remota=%d\n",
                 versionLocal, vRemota);
 
   return vRemota > versionLocal;
@@ -177,7 +177,8 @@ bool comprobarVersion() {
 // OTA
 // ===============================
 bool realizarOTA(const String& url) {
-  Serial.println("\nIniciando OTA:");
+  Serial.println("");
+  Serial.println("Iniciando OTA desde:");
   Serial.println(url);
 
   WiFiClientSecure client;
@@ -187,31 +188,30 @@ bool realizarOTA(const String& url) {
   http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
 
   if (!http.begin(client, url)) {
-    Serial.println(" Error OTA begin()");
+    Serial.println("Error OTA begin()");
     return false;
   }
 
-  // >>> CAMBIO IMPRESCINDIBLE <<<
   http.addHeader("User-Agent", "ESP32-Updater");
 
   int code = http.GET();
   if (code != HTTP_CODE_OK) {
-    Serial.printf(" Error HTTP OTA: %d\n", code);
+    Serial.printf("Error HTTP OTA: %d\n", code);
     http.end();
     return false;
   }
 
   int length = http.getSize();
   if (length <= 0) {
-    Serial.println(" Tamaño inválido");
+    Serial.println("Error: Tamano invalido");
     http.end();
     return false;
   }
 
-  Serial.printf("Tamaño firmware: %d bytes\n", length);
+  Serial.printf("Tamano firmware: %d bytes\n", length);
 
   if (!Update.begin(length)) {
-    Serial.println(" Error Update.begin()");
+    Serial.println("Error: Update.begin()");
     http.end();
     return false;
   }
@@ -220,19 +220,18 @@ bool realizarOTA(const String& url) {
   size_t written = Update.writeStream(*stream);
 
   if (written != length) {
-    Serial.printf(" Error escribiendo (%d/%d)\n", written, length);
+    Serial.printf("Error escribiendo (%d/%d)\n", written, length);
     http.end();
     return false;
   }
 
   if (!Update.end()) {
-    Serial.printf(" OTA Error: %s\n", Update.errorString());
+    Serial.printf("Error OTA: %s\n", Update.errorString());
     http.end();
     return false;
   }
 
-  Serial.println(" OTA completada. Guardando versión...");
-
+  Serial.println("OTA completada. Guardando version...");
   int vRemota = versionStringToInt(versionRemota);
   guardarVersionLocal(vRemota);
 
@@ -251,22 +250,28 @@ void setup() {
 
   pinMode(LED_PIN, OUTPUT);
 
-  Serial.println("\nIniciando...");
+  Serial.println("");
+  Serial.println("Iniciando...");
 
   if (!leerDatosNVS()) {
-    Serial.println("No hay WiFi. Modo configuración...");
+    Serial.println("No hay credenciales de WiFi. Se requiere configuracion.");
     modoConfiguracion();
   }
 
   conectarWiFi();
 
-  Serial.printf("Versión local almacenada: %d\n", versionLocal);
+  Serial.printf("Version local almacenada: %d\n", versionLocal);
+
+  // Asegurar lectura de version local ANTES del primer check
+  preferences.begin("version", true);
+  versionLocal = preferences.getInt("local", 0);
+  preferences.end();
 
   if (comprobarVersion()) {
-    Serial.println(" Nueva versión disponible → Actualizando...");
+    Serial.println("Hay nueva version disponible. Ejecutando OTA...");
     realizarOTA(urlFirmware);
   } else {
-    Serial.println(" Ya estás en la última versión.");
+    Serial.println("Ya estas en la ultima version.");
   }
 }
 
@@ -274,34 +279,39 @@ void setup() {
 // LOOP
 // ===============================
 void loop() {
-  // Parpadeo original
+  // Blink original
   digitalWrite(LED_PIN, HIGH);
   delay(300);
   digitalWrite(LED_PIN, LOW);
   delay(300);
 
-  // Comandos por Serial
+  // Comandos por puerto serie
   if (Serial.available()) {
     String cmd = Serial.readStringUntil('\n');
     cmd.trim();
 
     if (cmd.equalsIgnoreCase("ota")) {
-      Serial.println("\n Comando OTA recibido → revisando...");
+      Serial.println("Comando OTA recibido.");
+
+      preferences.begin("version", true);
       versionLocal = preferences.getInt("local", 0);
+      preferences.end();
 
       if (comprobarVersion()) {
-        Serial.println("\n Nueva versión → OTA...");
+        Serial.println("Nueva version disponible. Ejecutando OTA...");
         realizarOTA(urlFirmware);
       } else {
-        Serial.println("\n No hay nuevas versiones.");
+        Serial.println("No hay nuevas versiones.");
       }
     }
     else if (cmd.equalsIgnoreCase("wifi")) {
-      Serial.println("\n Reconfigurar WiFi...");
+      Serial.println("Reconfigurando WiFi...");
       modoConfiguracion();
     }
     else {
-      Serial.println("\n Comando no reconocido: ota / wifi");
+      Serial.println("Comandos validos:");
+      Serial.println("ota  -> Forzar actualizacion OTA");
+      Serial.println("wifi -> Reconfigurar WiFi");
     }
   }
 }
