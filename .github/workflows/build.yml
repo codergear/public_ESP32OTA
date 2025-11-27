@@ -5,12 +5,15 @@ on:
     branches: [ "main" ]
   workflow_dispatch:
 
+env:
+  VERSION: v${{ github.run_number }}
+
 jobs:
   build:
     runs-on: ubuntu-latest
 
     permissions:
-      contents: write
+      contents: write     # necesario para crear releases
 
     steps:
       - name: Checkout code
@@ -38,16 +41,11 @@ jobs:
 
       - name: Rename firmware
         run: |
-          mv build/blink_OTA.ino.bin build/blink_OTA.bin
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: esp32-firmware
-          path: build/blink_OTA.bin
+          mv build/*.bin build/blink_OTA.bin
 
       - name: Release firmware
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: latest
+          tag_name: ${{ env.VERSION }}
+          name: "Build ${{ env.VERSION }}"
           files: build/blink_OTA.bin
