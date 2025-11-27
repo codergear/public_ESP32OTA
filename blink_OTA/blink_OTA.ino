@@ -1,6 +1,7 @@
-// ESP32 Dev Module (WROOM
+// ESP32 Dev Module (WROOM)
 
 #include <WiFi.h>
+#include <WiFiClientSecure.h>   // ← NECESARIO PARA HTTPS
 #include <Preferences.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>

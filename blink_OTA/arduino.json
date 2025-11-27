@@ -1,0 +1,7 @@
+{
+  "sketch": "blink_OTA.ino",
+  "board": "esp32:esp32:esp32",
+  "monitor": {
+    "baud": 115200
+  }
+}
