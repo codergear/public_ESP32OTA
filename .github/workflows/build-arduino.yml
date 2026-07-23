@@ -1,12 +1,15 @@
-name: Build and Publish ESP32 Firmware
+name: Build and Publish ESP32 Firmware (Arduino)
 
 on:
   push:
     branches: [ "main" ]
+    paths:
+      - 'blink_OTA/**'
+      - '.github/workflows/build-arduino.yml'
   workflow_dispatch:
 
 env:
-  VERSION: v${{ github.run_number }}
+  VERSION: arduino-v${{ github.run_number }}
 
 jobs:
   build:

@@ -1,0 +1,43 @@
+name: Build and Publish ESP32 Firmware (ESP-IDF)
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'esp32_ota_idf/**'
+      - '.github/workflows/build-idf.yml'
+  workflow_dispatch:
+
+env:
+  VERSION: idf-v${{ github.run_number }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: espressif/idf:v6.0.2
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build firmware
+        shell: bash
+        working-directory: esp32_ota_idf
+        run: |
+          . $IDF_PATH/export.sh
+          idf.py set-target esp32
+          idf.py build
+
+      - name: Rename firmware
+        run: |
+          mv esp32_ota_idf/build/esp32_ota_idf.bin esp32_ota_idf/build/blink_OTA_idf.bin
+
+      - name: Release firmware
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ env.VERSION }}
+          name: "Build ${{ env.VERSION }}"
+          files: esp32_ota_idf/build/blink_OTA_idf.bin

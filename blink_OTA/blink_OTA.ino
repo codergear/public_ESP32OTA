@@ -14,7 +14,12 @@ Preferences preferences;
 // ===============================
 
 const char* GITHUB_API_URL =
-  "https://api.github.com/repos/codergear/public_ESP32OTA/releases/latest";
+  "https://api.github.com/repos/codergear/public_ESP32OTA/releases?per_page=10";
+
+// Prefijo de tag que identifica los releases de este firmware (Arduino).
+// El repo tambien publica releases "idf-vN" para el proyecto ESP-IDF; hay
+// que ignorarlos.
+const char* VERSION_PREFIX = "arduino-v";
 
 const int LED_PIN = 2;
 
@@ -33,8 +38,8 @@ String urlFirmware = "";
 // UTILIDADES
 // ===============================
 int versionStringToInt(const String& tag) {
-  if (tag.length() < 2) return 0;
-  return tag.substring(1).toInt();   // v12 -> 12
+  if (!tag.startsWith(VERSION_PREFIX)) return 0;
+  return tag.substring(strlen(VERSION_PREFIX)).toInt();   // arduino-v12 -> 12
 }
 
 // ===============================
@@ -151,7 +156,7 @@ bool comprobarVersion() {
   String json = http.getString();
   http.end();
 
-  StaticJsonDocument<8192> doc;
+  StaticJsonDocument<16384> doc;
   auto err = deserializeJson(doc, json);
 
   if (err) {
@@ -159,8 +164,21 @@ bool comprobarVersion() {
     return false;
   }
 
-  versionRemota = doc["tag_name"].as<String>();
-  urlFirmware   = doc["assets"][0]["browser_download_url"].as<String>();
+  bool encontrado = false;
+  for (JsonObject release : doc.as<JsonArray>()) {
+    String tag = release["tag_name"].as<String>();
+    if (tag.startsWith(VERSION_PREFIX)) {
+      versionRemota = tag;
+      urlFirmware   = release["assets"][0]["browser_download_url"].as<String>();
+      encontrado = true;
+      break;
+    }
+  }
+
+  if (!encontrado) {
+    Serial.println("No se encontro ningun release de Arduino en el repo");
+    return false;
+  }
 
   Serial.println("Version remota: " + versionRemota);
   Serial.println("URL Firmware:   " + urlFirmware);
