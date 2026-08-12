@@ -28,7 +28,7 @@ jobs:
         working-directory: esp32_ota_idf
         run: |
           . $IDF_PATH/export.sh
-          idf.py set-target esp32
+          idf.py set-target esp32s3
           idf.py build
 
       - name: Rename firmware
